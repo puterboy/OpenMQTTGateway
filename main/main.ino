@@ -2456,16 +2456,7 @@ void loop() {
 #if defined(ZwebUI) && defined(ESP32)
     WebUILoop();
 #endif
-#ifdef ESP32
-    if (xSemaphoreTake(xMqttMutex, pdMS_TO_TICKS(QueueSemaphoreTimeOutTask)) == pdTRUE) {
-	    mqtt->loop();
-	    xSemaphoreGive(xMqttMutex);	  
-    } else {
-	    Log.error(F("xMqttMutex not taken" CR));
-	  }
-#else
     mqtt->loop();
-#endif
     if (mqtt->connected()) { // MQTT client is still connected
       InfoIndicatorON();
       failure_number_ntwk = 0;
