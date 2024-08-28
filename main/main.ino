@@ -1,5 +1,4 @@
-/*
-  OpenMQTTGateway  - ESP8266 or Arduino program for home automation
+fx  OpenMQTTGateway  - ESP8266 or Arduino program for home automation
 
    Act as a gateway between your 433mhz, infrared IR, BLE, LoRa signal and one interface like an MQTT broker
    Send and receiving command by MQTT
@@ -95,8 +94,6 @@ std::queue<JsonBundle> jsonQueue;
 #  include <driver/adc.h>
 // Mutex  to protect the queue
 SemaphoreHandle_t xQueueMutex;
-// Mutex to protect mqtt publish
-SemaphoreHandle_t xMqttMutex;
 bool blufiConnectAP = false;
 #endif
 
@@ -726,12 +723,6 @@ void pubMQTT(const char* topic, const char* payload) {
  */
 void pubMQTT(const char* topic, const char* payload, bool retainFlag) {
   if (SYSConfig.XtoMQTT && !SYSConfig.offline) {
-#ifdef ESP32
-    if (xSemaphoreTake(xMqttMutex, pdMS_TO_TICKS(QueueSemaphoreTimeOutTask)) == pdFALSE) {
-      Log.error(F("xMqttMutex not taken" CR));
-		  return;
-    }
-#endif
     if (mqtt && mqtt->connected()) {
       SendReceiveIndicatorON();
       Log.trace(F("[ OMG->MQTT ] topic: %s msg: %s " CR), topic, payload);
@@ -739,9 +730,6 @@ void pubMQTT(const char* topic, const char* payload, bool retainFlag) {
     } else {
       Log.warning(F("MQTT not connected, aborting the publication" CR));
     }
-#ifdef ESP32
-	xSemaphoreGive(xMqttMutex);
-#endif
   } else {
     Log.notice(F("[ OMG->MQTT deactivated or offline] topic: %s msg: %s " CR), topic, payload);
   }
@@ -1300,7 +1288,6 @@ void setup() {
 #  endif
 #elif ESP32
   xQueueMutex = xSemaphoreCreateMutex();
-  xMqttMutex = xSemaphoreCreateMutex();
 #  if defined(ZboardM5STICKC) || defined(ZboardM5STICKCP) || defined(ZboardM5STACK) || defined(ZboardM5TOUGH)
   setupM5();
 #  endif
@@ -2456,16 +2443,7 @@ void loop() {
 #if defined(ZwebUI) && defined(ESP32)
     WebUILoop();
 #endif
-#ifdef ESP32
-    if (xSemaphoreTake(xMqttMutex, pdMS_TO_TICKS(QueueSemaphoreTimeOutTask)) == pdTRUE) {
-	    mqtt->loop();
-	    xSemaphoreGive(xMqttMutex);	  
-    } else {
-	    Log.error(F("xMqttMutex not taken" CR));
-	  }
-#else
     mqtt->loop();
-#endif
     if (mqtt->connected()) { // MQTT client is still connected
       InfoIndicatorON();
       failure_number_ntwk = 0;
