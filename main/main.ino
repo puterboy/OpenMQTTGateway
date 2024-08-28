@@ -498,6 +498,7 @@ boolean enqueueJsonObject(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc, in
   Log.trace(F("Enqueue JSON" CR));
   String jsonString;
   serializeJson(jsonDoc, jsonString);
+  Log.notice(F("Enqueue JSON: %s" CR), jsonString.c_str()); //JJKCRAP
 #ifdef ESP32
   // Semaphore check before enqueueing a document
   if (xSemaphoreTake(xQueueMutex, pdMS_TO_TICKS(timeout)) == pdFALSE) {
@@ -510,6 +511,7 @@ boolean enqueueJsonObject(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc, in
 #ifdef ESP32
   xSemaphoreGive(xQueueMutex);
 #endif
+  Log.notice(F("Queue length: %d" CR), jsonQueue.size()); //JJKCRAP
   Log.trace(F("Queue length: %d" CR), jsonQueue.size());
   return true;
 }
@@ -600,6 +602,7 @@ void emptyQueue() {
     return;
   }
 #endif
+  Log.notice(F("Dequeue JSON: %s" CR), jsonQueue.front().c_str()); //JJKCRAP
   auto error = deserializeJson(jsonBuffer, jsonQueue.front());
   jsonQueue.pop();
 #ifdef ESP32
