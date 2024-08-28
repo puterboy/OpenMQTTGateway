@@ -728,7 +728,7 @@ void pubMQTT(const char* topic, const char* payload) {
  * @param retainFlag  true if retain the retain Flag
  */
 void pubMQTT(const char* topic, const char* payload, bool retainFlag) {
-  if (SYSConfig.XtoMQTT && !SYSConfig.offline) {
+  if (SYSConfig.mqtt && !SYSConfig.offline) {
 #ifdef ESP32
     if (xSemaphoreTake(xMqttMutex, pdMS_TO_TICKS(QueueSemaphoreTimeOutTask)) == pdFALSE) {
       Log.error(F("xMqttMutex not taken" CR));
