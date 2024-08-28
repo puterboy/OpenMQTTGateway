@@ -29,7 +29,6 @@
 extern void setupBT();
 extern bool BTtoMQTT();
 extern void MQTTtoBT(char* topicOri, JsonObject& RFdata);
-extern void pubMainCore(JsonObject& data);
 extern void launchBTDiscovery(bool overrideDiscovery);
 extern void stopProcessing();
 extern String stateBTMeasures(bool);
@@ -119,6 +118,16 @@ extern String stateBTMeasures(bool);
 
 #ifndef EnableBT
 #  define EnableBT true
+#endif
+
+#ifndef BLEDecoder
+#  define BLEDecoder true //true if we use the Theengs decoder
+#endif
+
+#if !BLEDecoder
+#  define UNKWNON_MODEL -1
+#else
+#  define UNKWNON_MODEL TheengsDecoder::BLE_ID_NUM::UNKNOWN_MODEL
 #endif
 
 #ifndef BLE_CNCT_TIMEOUT
