@@ -89,7 +89,7 @@ struct JsonBundle {
   StaticJsonDocument<JSON_MSG_BUFFER> doc;
 };
 
-std::queue<String> jsonQueue;
+std::queue<std::string> jsonQueue;
 
 #ifdef ESP32
 #  include <driver/adc.h>
@@ -496,7 +496,7 @@ boolean enqueueJsonObject(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc, in
     return false;
   }
   Log.trace(F("Enqueue JSON" CR));
-  String jsonString;
+  std::string jsonString;
   serializeJson(jsonDoc, jsonString);
   Log.notice(F("Enqueue JSON: %s" CR), jsonString.c_str()); //JJKCRAP
 #ifdef ESP32
@@ -516,14 +516,9 @@ boolean enqueueJsonObject(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc, in
   return true;
 }
 
-// Semaphore check before enqueueing a document
-bool handleJsonEnqueue(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc, int timeout) {
-  return enqueueJsonObject(jsonDoc, timeout);
-}
-
 // Semaphore check before enqueueing a document with default timeout QueueSemaphoreTimeOutLoop
-bool handleJsonEnqueue(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc) {
-  return handleJsonEnqueue(jsonDoc, QueueSemaphoreTimeOutLoop);
+bool enqueueJsonObject(const StaticJsonDocument<JSON_MSG_BUFFER>& jsonDoc) {
+  return enqueueJsonObject(jsonDoc, QueueSemaphoreTimeOutLoop);
 }
 
 #ifdef ESP32
@@ -2827,8 +2822,7 @@ String stateMeasures() {
   SYSdata["modules"] = modules;
 
   SYSdata["origin"] = subjectSYStoMQTT;
-  handleJsonEnqueue(SYSdata);
-  pubOled(subjectSYStoMQTT, SYSdata);
+  enqueueJsonObject(SYSdata);
 
   char jsonChar[100];
   serializeJson(modules, jsonChar, 99);
@@ -3077,7 +3071,7 @@ bool checkForUpdates() {
     latestVersion = jsondata["latest_version"].as<String>();
     jsondata["origin"] = subjectRLStoMQTT;
     jsondata["retain"] = true;
-    handleJsonEnqueue(jsondata);
+    enqueueJsonObject(jsondata);
 
     Log.trace(F("Update file found on server" CR));
     return true;
@@ -3152,7 +3146,7 @@ void MQTTHttpsFWUpdate(char* topicOri, JsonObject& HttpsFwUpdateData) {
       StaticJsonDocument<JSON_MSG_BUFFER> jsondata;
       jsondata["release_summary"] = "Update in progress ...";
       jsondata["origin"] = subjectRLStoMQTT;
-      handleJsonEnqueue(jsondata);
+      enqueueJsonObject(jsondata);
 
       std::string ota_cert = processCert(HttpsFwUpdateData["ota_server_cert"] | "");
       Log.notice(F("OTA cert: %s" CR), ota_cert.c_str());
@@ -3228,7 +3222,7 @@ void MQTTHttpsFWUpdate(char* topicOri, JsonObject& HttpsFwUpdateData) {
           jsondata["release_summary"] = "Update success !";
           jsondata["installed_version"] = latestVersion;
           jsondata["origin"] = subjectRLStoMQTT;
-          handleJsonEnqueue(jsondata);
+          enqueueJsonObject(jsondata);
 #  if !MQTT_BROKER_MODE
           if (cnt_index != 0) // We don't enable the change of cert provided at build time
             cnt_parameters_array[cnt_index].ota_server_cert = ota_cert;
